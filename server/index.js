@@ -39,7 +39,8 @@ app.use(
 const allowedOrigins = [
   process.env.CLIENT_URL,
   "http://localhost:3000", // For development
-  "https://localhost:3000", // For development with HTTPS
+  "https://localhost:3000",
+  "https://arcade-clone-p0u0.onrender.com"// For development with HTTPS
 ]
 
 app.use(
