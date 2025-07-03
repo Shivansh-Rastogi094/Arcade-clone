@@ -3,33 +3,39 @@
 import { createContext, useContext, useState, useEffect } from "react"
 import axios from "axios"
 
-// Replace with your actual backend URL from Render
-const API_BASE_URL ="https://arcade-clone-backend.onrender.com"
+// FIXED: Use your actual backend URL
+const API_BASE_URL = "https://arcade-clone-backend.onrender.com"
 
-// Configure axios base URL and credentials
+// Configure axios
 axios.defaults.baseURL = API_BASE_URL
 axios.defaults.withCredentials = true
 
-// Add request interceptor for debugging
+// Add detailed logging
 axios.interceptors.request.use(
   (config) => {
-    console.log("🔍 API Request:", config.method?.toUpperCase(), config.url)
+    console.log("🔍 Making API request:")
+    console.log("  - Method:", config.method?.toUpperCase())
+    console.log("  - URL:", `${config.baseURL}${config.url}`)
+    console.log("  - Full URL:", axios.getUri(config))
     return config
   },
   (error) => {
-    console.error("❌ Request Error:", error)
+    console.error("❌ Request setup error:", error)
     return Promise.reject(error)
   },
 )
 
-// Add response interceptor for debugging
 axios.interceptors.response.use(
   (response) => {
-    console.log("✅ API Response:", response.status, response.config.url)
+    console.log("✅ API success:", response.status, response.config.url)
     return response
   },
   (error) => {
-    console.error("❌ API Error:", error.response?.status, error.config?.url, error.response?.data)
+    console.error("❌ API error details:")
+    console.error("  - Status:", error.response?.status)
+    console.error("  - URL:", error.config?.url)
+    console.error("  - Full URL:", error.config ? axios.getUri(error.config) : "Unknown")
+    console.error("  - Error:", error.response?.data || error.message)
     return Promise.reject(error)
   },
 )
@@ -49,17 +55,19 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    console.log("🔍 AuthProvider mounted, API_BASE_URL:", API_BASE_URL)
     fetchUser()
   }, [])
 
   const fetchUser = async () => {
     try {
-      console.log("🔍 Fetching user from:", `${API_BASE_URL}/api/auth/me`)
+      console.log("🔍 Attempting to fetch user...")
       const response = await axios.get("/api/auth/me")
-      console.log("✅ User fetched:", response.data)
+      console.log("✅ User fetched successfully:", response.data)
       setUser(response.data)
     } catch (error) {
-      console.error("❌ Failed to fetch user:", error.response?.status, error.response?.data)
+      console.error("❌ Failed to fetch user")
+      console.error("  - This is normal if user is not logged in")
       setUser(null)
     } finally {
       setLoading(false)
