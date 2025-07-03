@@ -7,11 +7,11 @@ import axios from "axios"
 import toast from "react-hot-toast"
 import { Plus, Eye, Edit, Trash2, Share2, Calendar, MoreVertical, Search, Filter } from "lucide-react"
 import LoadingSpinner from "../components/LoadingSpinner"
+import NetworkTest from "../components/NetworkTest"
 
 const Dashboard = () => {
   const [tours, setTours] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterBy, setFilterBy] = useState("all")
 
@@ -21,16 +21,13 @@ const Dashboard = () => {
 
   const fetchTours = async () => {
     try {
-      console.log("🔍 Fetching tours...")
-      const response = await axios.get("/api/tours")
-      console.log("✅ Tours fetched:", response.data)
+      console.log("🔍 Dashboard: Fetching tours...")
+      const response = await axios.get("/api/tours", { withCredentials: true })
+      console.log("✅ Dashboard: Tours fetched:", response.data)
       setTours(response.data)
-      setError(null)
     } catch (error) {
-      console.error("❌ Failed to fetch tours:", error)
-      const errorMessage = error.response?.data?.message || error.message || "Failed to fetch tours"
-      setError(errorMessage)
-      toast.error(errorMessage)
+      console.error("❌ Dashboard: Failed to fetch tours:", error)
+      toast.error("Failed to fetch tours")
     } finally {
       setLoading(false)
     }
@@ -42,11 +39,10 @@ const Dashboard = () => {
     }
 
     try {
-      await axios.delete(`/api/tours/${id}`)
+      await axios.delete(`/api/tours/${id}`, { withCredentials: true })
       setTours(tours.filter((tour) => tour._id !== id))
       toast.success("Tour deleted successfully")
     } catch (error) {
-      console.error("❌ Failed to delete tour:", error)
       toast.error("Failed to delete tour")
     }
   }
@@ -66,38 +62,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <LoadingSpinner size="lg" />
-          <p className="mt-4 text-gray-600">Loading your tours...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-red-600 text-2xl">⚠️</span>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Unable to Load Dashboard</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <div className="space-y-3">
-            <button
-              onClick={fetchTours}
-              className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Try Again
-            </button>
-            <Link
-              to="/"
-              className="block w-full bg-gray-100 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              Go Home
-            </Link>
-          </div>
-        </div>
+        <LoadingSpinner size="lg" />
       </div>
     )
   }
@@ -285,6 +250,9 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Debug Component - Remove this in production */}
+      {process.env.NODE_ENV === "development" && <NetworkTest />}
     </div>
   )
 }
