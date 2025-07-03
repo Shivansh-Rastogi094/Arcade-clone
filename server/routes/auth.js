@@ -18,8 +18,12 @@ router.get(
     failureRedirect: `${process.env.CLIENT_URL}/login?error=auth_failed`,
   }),
   (req, res) => {
-    // Successful authentication
-    res.redirect(`${process.env.CLIENT_URL}/dashboard`)
+    // Successful authentication - redirect to frontend dashboard
+    console.log("✅ OAuth success, user:", req.user.name)
+    console.log("✅ Redirecting to:", `${process.env.CLIENT_URL}/dashboard`)
+
+    // Use a more explicit redirect
+    res.redirect(301, `${process.env.CLIENT_URL}/dashboard`)
   },
 )
 
