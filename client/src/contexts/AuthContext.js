@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useEffect } from "react"
 import axios from "axios"
 
 // Replace with your actual backend URL from Render
-const API_BASE_URL = process.env.REACT_APP_API_URL || "https://your-backend-service-name.onrender.com"
+const API_BASE_URL = process.env.REACT_APP_API_URL || "https://arcade-clone-backend.onrender.com/"
 
 // Configure axios base URL and credentials
 axios.defaults.baseURL = API_BASE_URL
