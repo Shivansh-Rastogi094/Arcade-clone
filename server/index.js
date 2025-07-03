@@ -36,26 +36,13 @@ app.use(
 )
 
 // CORS configuration for production
-const allowedOrigins = [
-  process.env.CLIENT_URL,
-  "http://localhost:3000", // For development
-  "https://localhost:3000",
-  "https://arcade-clone-p0u0.onrender.com"// For development with HTTPS
-]
-
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, etc.)
-      if (!origin) return callback(null, true)
-
-      if (allowedOrigins.indexOf(origin) !== -1) {
-        callback(null, true)
-      } else {
-        console.log("❌ CORS blocked origin:", origin)
-        callback(new Error("Not allowed by CORS"))
-      }
-    },
+    origin: [
+      process.env.CLIENT_URL,
+      "http://localhost:3000", // For development
+      "https://localhost:3000", // For development with HTTPS
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -66,7 +53,7 @@ app.use(
 app.use(express.json({ limit: "50mb" }))
 app.use(express.urlencoded({ extended: true, limit: "50mb" }))
 
-// Session configuration
+// Session configuration - Updated for cross-domain
 app.use(
   session({
     secret: SESSION_SECRET,
@@ -81,6 +68,7 @@ app.use(
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     },
+    name: "arcade.session", // Custom session name
   }),
 )
 
