@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect } from "react"
 import axios from "axios"
 
-// FIXED: Use your actual backend URL
+// FIXED: Use HTTPS for your backend URL
 const API_BASE_URL = "https://arcade-clone-backend.onrender.com"
 
 // Configure axios
