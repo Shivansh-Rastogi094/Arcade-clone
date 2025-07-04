@@ -10,7 +10,8 @@ const SimpleDebug = () => {
   }, [])
 
   const runTests = async () => {
-    const backendUrl = "https://arcade-clone-backend.onrender.com" // Your actual backend URL
+    // FIXED: Use HTTPS for backend URL
+    const backendUrl = "https://arcade-clone-backend.onrender.com"
 
     console.log("🔍 Testing backend URL:", backendUrl)
 
