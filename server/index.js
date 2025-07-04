@@ -35,14 +35,27 @@ app.use(
   }),
 )
 
-// CORS configuration for production
+// CORS configuration for production - FIXED for Render
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "http://localhost:3000", // For development
+  "https://localhost:3000", // For development with HTTPS
+  "https://arcade-clone-frontend.onrender.com", // Your actual frontend URL
+]
+
 app.use(
   cors({
-    origin: [
-      process.env.CLIENT_URL,
-      "http://localhost:3000", // For development
-      "https://localhost:3000", // For development with HTTPS
-    ],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin) return callback(null, true)
+
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true)
+      } else {
+        console.log("❌ CORS blocked origin:", origin)
+        callback(new Error("Not allowed by CORS"))
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -53,7 +66,7 @@ app.use(
 app.use(express.json({ limit: "50mb" }))
 app.use(express.urlencoded({ extended: true, limit: "50mb" }))
 
-// Session configuration - Updated for cross-domain
+// FIXED: Session configuration for Render cross-domain
 app.use(
   session({
     secret: SESSION_SECRET,
@@ -63,12 +76,12 @@ app.use(
       mongoUrl: process.env.MONGODB_URI || "mongodb://localhost:27017/arcade-clone",
     }),
     cookie: {
-      secure: process.env.NODE_ENV === "production",
+      secure: true, // Always true for HTTPS
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      sameSite: "none", // Required for cross-domain cookies
+      // Remove domain setting for Render
     },
-    name: "arcade.session", // Custom session name
   }),
 )
 
