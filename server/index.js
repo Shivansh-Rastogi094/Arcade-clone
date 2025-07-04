@@ -24,7 +24,7 @@ console.log("- CLIENT_URL:", process.env.CLIENT_URL || "❌ Missing")
 
 const app = express()
 
-// Trust proxy for Render
+// Trust proxy for Render (CRITICAL!)
 app.set("trust proxy", 1)
 
 // Security middleware
@@ -35,30 +35,43 @@ app.use(
   }),
 )
 
-// ENHANCED CORS configuration for Render cross-domain issues
-app.use(
-  cors({
-    origin: [
+// FIXED: More permissive CORS for cross-domain cookies
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true)
+
+    const allowedOrigins = [
       process.env.CLIENT_URL,
       "http://localhost:3000",
       "https://localhost:3000",
       "https://arcade-clone-frontend.onrender.com",
-    ],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
-    exposedHeaders: ["Set-Cookie"],
-  }),
-)
+    ]
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      console.log("🔍 CORS blocked origin:", origin)
+      callback(null, true) // Allow for now, log for debugging
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Cookie", "X-Requested-With"],
+  exposedHeaders: ["Set-Cookie"],
+  optionsSuccessStatus: 200,
+}
+
+app.use(cors(corsOptions))
 
 // Handle preflight requests
-app.options("*", cors())
+app.options("*", cors(corsOptions))
 
 // Body parsing middleware
 app.use(express.json({ limit: "50mb" }))
 app.use(express.urlencoded({ extended: true, limit: "50mb" }))
 
-// FIXED: Enhanced session configuration for cross-domain
+// FIXED: Simplified session configuration that works with Render
 app.use(
   session({
     secret: SESSION_SECRET,
@@ -66,15 +79,18 @@ app.use(
     saveUninitialized: false,
     store: MongoStore.create({
       mongoUrl: process.env.MONGODB_URI || "mongodb://localhost:27017/arcade-clone",
-      touchAfter: 24 * 3600, // lazy session update
+      touchAfter: 24 * 3600,
+      ttl: 7 * 24 * 60 * 60, // 7 days
     }),
     cookie: {
       secure: true, // HTTPS only
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      sameSite: "none", // Required for cross-domain
+      sameSite: "none", // CRITICAL for cross-domain
+      // Remove domain restriction - let browser handle it
     },
-    name: "arcade.session", // Custom session name
+    name: "connect.sid", // Use default session name
+    rolling: true,
   }),
 )
 
@@ -82,13 +98,17 @@ app.use(
 app.use(passport.initialize())
 app.use(passport.session())
 
-// Add session debugging middleware
+// ENHANCED session debugging middleware
 app.use((req, res, next) => {
   console.log("🔍 Session Debug:")
+  console.log("  - Method:", req.method)
+  console.log("  - URL:", req.url)
+  console.log("  - Origin:", req.headers.origin)
   console.log("  - Session ID:", req.sessionID)
   console.log("  - User ID:", req.user ? req.user._id : "No user")
-  console.log("  - Session exists:", !!req.session)
-  console.log("  - Cookies:", req.headers.cookie)
+  console.log("  - Is authenticated:", req.isAuthenticated())
+  console.log("  - Cookies received:", req.headers.cookie ? "Yes" : "No")
+  console.log("  - Cookie header:", req.headers.cookie?.substring(0, 100))
   next()
 })
 
@@ -123,7 +143,10 @@ app.get("/api/health", (req, res) => {
     environment: process.env.NODE_ENV || "development",
     port: process.env.PORT || 5000,
     session: !!req.session,
+    sessionId: req.sessionID,
     user: !!req.user,
+    cookies: !!req.headers.cookie,
+    isAuthenticated: req.isAuthenticated(),
   })
 })
 
@@ -138,6 +161,16 @@ app.get("/", (req, res) => {
       tours: "/api/tours",
       upload: "/api/upload",
     },
+  })
+})
+
+// Handle /api/ route
+app.get("/api", (req, res) => {
+  res.json({
+    message: "Arcade Clone API",
+    version: "1.0.0",
+    status: "running",
+    endpoints: ["/api/health", "/api/auth/google", "/api/auth/me", "/api/tours"],
   })
 })
 
